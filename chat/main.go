@@ -35,12 +35,14 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if authCookie, err := r.Cookie("auth"); err == nil{
 		data["UserData"] = objx.MustFromBase64(authCookie.Value)
 	}
+	
 	t.templ.Execute(w, data)
 }
 
 func main() {
 	var addr = flag.String("addr",":8080","アプリケーションのアドレス")
 	flag.Parse();
+
 	//Gomniauthのセットアップ
 	gomniauth.SetSecurityKey("hfioeferuielfjeho137udje73d83thgd62")
 	gomniauth.WithProviders(
@@ -48,9 +50,12 @@ func main() {
 		github.New("クライアントID","秘密鍵","http://localhost:8080/auth/callback/github"),
 		google.New("191903503672-2ne2dr00ucfcr4l81g5q7opmfbbfnhss.apps.googleusercontent.com","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","http://localhost:8080/auth/callback/google"),
 	)
-	r := newRoom()
+
+	r := newRoom(UseGravatar)
+
 	//取得したログをコンソールに表示
 	r.tracer = trace.New(os.Stdout)
+
 	//ルート
 	http.Handle("/chat", MustAuth(&templateHandler{filename: "chat.html"}))
 	http.Handle("/login",&templateHandler{filename: "login.html"})
@@ -66,8 +71,10 @@ func main() {
 		w.Header()["Location"] = []string{"/chat"}
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	})
+
 	//チャットルームを開始
 	go r.run()
+
 	//webサーバの開始
 	log.Println("Webサーバーを開始します　ポート: ",*addr)
 	if err := http.ListenAndServe(*addr, nil); err != nil {

@@ -21,15 +21,18 @@ type room struct {
 	clients map[*client]bool
 	//tracerはチャットルーム上で行われた操作のログを受け取る
 	tracer trace.Tracer
+	//avatarはアバターの情報を取得する
+	avatar Avatar
 }
 
-func newRoom() *room {
+func newRoom(avatar Avatar) *room {
 	return &room{
 		forward: make(chan *message),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
 		tracer:  trace.Off(),
+		avatar: avatar,
 	}
 }
 
@@ -40,19 +43,23 @@ func (r *room) run() {
 			//参加
 			r.clients[client] = true
 			r.tracer.Trace("新しいクライアントが参加しました")
+
 		case client := <-r.leave:
 			//退室
 			delete(r.clients, client)
 			close(client.send)
 			r.tracer.Trace("クライアントが退室しました")
+
 		case msg := <-r.forward:
 			r.tracer.Trace("メッセージを取得しました: ", msg.Message)
+
 			//すべてのクライアントにメッセージを転送
 			for client := range r.clients {
 				select {
 				case client.send <- msg:
 					//メッセージを送信
 					r.tracer.Trace("--クライアントに送信されました")
+					
 				default:
 					//送信失敗
 					delete(r.clients, client)
