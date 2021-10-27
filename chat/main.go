@@ -51,7 +51,7 @@ func main() {
 		google.New("191903503672-2ne2dr00ucfcr4l81g5q7opmfbbfnhss.apps.googleusercontent.com","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","http://localhost:8080/auth/callback/google"),
 	)
 
-	r := newRoom(UseGravatar)
+	r := newRoom(UseFileSystemAvatar)
 
 	//取得したログをコンソールに表示
 	r.tracer = trace.New(os.Stdout)
@@ -71,6 +71,11 @@ func main() {
 		w.Header()["Location"] = []string{"/chat"}
 		w.WriteHeader(http.StatusTemporaryRedirect)
 	})
+	http.Handle("/upload",&templateHandler{filename: "upload.html"})
+	http.HandleFunc("/uploader",uploadHandler)
+	http.Handle("/avatars/",
+		http.StripPrefix("/avatars/",
+			http.FileServer(http.Dir("./avatars"))))
 
 	//チャットルームを開始
 	go r.run()
