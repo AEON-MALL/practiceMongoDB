@@ -17,6 +17,12 @@ import (
 	"trace"
 )
 
+var avatars Avatar=TryAvatars{
+	UseFileSystemAvatar,
+	UseAuthAvatar,
+	UseGravatar,
+}
+
 //templは一つのテンプレートを表す
 type templateHandler struct {
 	once     sync.Once
