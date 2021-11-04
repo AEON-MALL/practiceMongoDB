@@ -10,6 +10,7 @@ import (
 )
 
 const otherWord = "*"
+
 var transforms = []string{
 	otherWord,
 	otherWord,
