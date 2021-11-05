@@ -35,10 +35,12 @@ func main() {
 					}
 				}
 			}
-			if randBool() {
-				word = duplicateVowel(word, vI)
-			}else{
-				word = removeVowel(word, vI)
+			if vI >= 0 {
+				if randBool() {
+					word = duplicateVowel(word, vI)
+				}else{
+					word = removeVowel(word, vI)
+				}
 			}
 		}
 		fmt.Println(string(word))

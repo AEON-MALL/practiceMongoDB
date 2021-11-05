@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-type BigHugh struct{
+type BigHuge struct{
 	APIkey string
 }
 
@@ -19,9 +19,9 @@ type words struct {
 	Syn [] string `json:"syn"` 
 }
 
-func (b *BigHugh) Synonyms(term string) ([]string ,error){
+func (b *BigHuge) Synonyms(term string) ([]string ,error){
 	var syns []string
-	response, err := http.Get("http://words.bighugelabs.co/api/2/" + b.APIkey + "/ " + term + "/json")
+	response, err := http.Get("https://words.bighugelabs.com/api/2/"+b.APIkey+"/"+term+"/json")
 	if err != nil {
 		return syns , fmt.Errorf("bighuge : %qの類語検索に失敗しました: %v", term, err)
 	}

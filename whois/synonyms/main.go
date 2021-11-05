@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	apiKey := os.Getenv("BHT_APIKEY")
-	thesaurus := &thesaurus.BigHugh{APIKey: apiKey}
+	apiKey  := os.Getenv("BHT_APIKEY")
+	thesaurus := &thesaurus.BigHuge{APIkey: apiKey}
 	s := bufio.NewScanner(os.Stdin)
 	for s.Scan(){
 		word := s.Text()
@@ -19,7 +19,7 @@ func main() {
 			log.Fatalf("%qの類語検索に失敗しました:%v\n", word ,err )
 		}
 		if len(syns)==0 {
-			log.Fatalf("%qに類語はありませんでした。\n")
+			log.Fatalf("%qに類語はありませんでした。\n",word)
 		}
 		for _,syn := range syns {
 			fmt.Println(syn)
