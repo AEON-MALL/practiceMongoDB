@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -133,4 +135,25 @@ func readFromTwitter(votes chan<- string) {
 		return
 	}
 	query := make(url.Values)
+	query.Set("track", strings.Join(options, ","))
+	req, err := http.NewRequest("POST", u.String(), strings.NewReader(query.Encode()))
+	resp, err := makeRequest(req, query)
+	if err != nil {
+		log.Panicln("検索のリクエスト作成に失敗しました:", err)
+		return
+	}
+	reader = resp.Body
+	decoder := json.NewDecoder(reader)
+	for {
+		var tweet tweet
+		if err := decoder.Decode(&tweet); err != nil {
+			break
+		}
+		for _, option := range options {
+			if strings.Contains(strings.ToLower(tweet.Text), strings.ToLower(option)) {
+				log.Println("投票: ", option)
+				votes <- option
+			}
+		}
+	}
 }
