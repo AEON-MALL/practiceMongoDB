@@ -12,14 +12,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/garyburcd/go-oauth/oauth"
+	"github.com/garyburd/go-oauth/oauth"
 	"github.com/joeshaw/envdecode"
-	"gopkg.in/mgo.v2"
 )
 
 var conn net.Conn
 
-func deal(netw, addr string) (net.Conn, error) {
+func dial(netw, addr string) (net.Conn, error) {
 	if conn != nil {
 		conn.Close()
 		conn = nil
@@ -29,7 +28,7 @@ func deal(netw, addr string) (net.Conn, error) {
 		return nil, err
 	}
 	conn = netc
-	return conn, err
+	return netc, err
 }
 
 var reader io.ReadCloser
@@ -75,7 +74,7 @@ var (
 	httpClient    *http.Client
 )
 
-func makeRequest(req *http.Request, params url.Values) (*http.Respose, error) {
+func makeRequest(req *http.Request, params url.Values) (*http.Response, error) {
 	authSetupOnce.Do(func() {
 		setupTwitterAuth()
 		httpClient = &http.Client{
@@ -84,39 +83,11 @@ func makeRequest(req *http.Request, params url.Values) (*http.Respose, error) {
 			},
 		}
 	})
-	formEnc := param.Encode()
+	formEnc := params.Encode()
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Content-Length", strconv.Itoa(len(formEnc)))
 	req.Header.Set("Authorization", authClient.AuthorizationHeader(creds, "POST", req.URL, params))
 	return httpClient.Do(req)
-}
-
-var db *mgo.Session
-
-func dialdb() error {
-	var err error
-	log.Println("MongoDBにダイアル中:　localhost")
-	db, err = mgo.Dial("localhost")
-	return err
-}
-func closedb() {
-	db.Close()
-	log.Println("データベース接続が閉じられました")
-}
-
-type poll struct {
-	Options []string
-}
-
-func loadOption() ([]string, error) {
-	var options []string
-	iter := db.DB("ballots").C("polls").Find(nil).Iter()
-	var p poll
-	for iter.Next(&p) {
-		options = append(options, p.Options...)
-	}
-	iter.Close()
-	return options, iter.Err()
 }
 
 type tweet struct {
@@ -154,6 +125,23 @@ func readFromTwitter(votes chan<- string) {
 				log.Println("投票: ", option)
 				votes <- option
 			}
+		}
+	}
+}
+
+func startTwitterSteram(stopchan <-chan struct{}, votes chan<- string) <-chan struct{} {
+	stoppedchan := make(chan struct{}, 1)
+	go func() {
+		stoppedchan <- struct{}{}
+	}()
+	for {
+		select {
+		case <-stopchan:
+			log.Println("Twitterへの問い合わせを終了します")
+			return
+		default:
+			log.Println("Twitterに問合せします")
+			readFromTwitter(votes)
 		}
 	}
 }
