@@ -108,9 +108,13 @@ func readFromTwitter(votes chan<- string) {
 	query := make(url.Values)
 	query.Set("track", strings.Join(options, ","))
 	req, err := http.NewRequest("POST", u.String(), strings.NewReader(query.Encode()))
+	if err != nil{
+		log.Println("検索のリクエスト作成に失敗しました",err)
+		return
+	}
 	resp, err := makeRequest(req, query)
 	if err != nil {
-		log.Panicln("検索のリクエスト作成に失敗しました:", err)
+		log.Panicln("検索のリクエストに失敗しました:", err)
 		return
 	}
 	reader = resp.Body
@@ -132,16 +136,21 @@ func readFromTwitter(votes chan<- string) {
 func startTwitterSteram(stopchan <-chan struct{}, votes chan<- string) <-chan struct{} {
 	stoppedchan := make(chan struct{}, 1)
 	go func() {
+		defer func(){
 		stoppedchan <- struct{}{}
-	}()
-	for {
-		select {
-		case <-stopchan:
-			log.Println("Twitterへの問い合わせを終了します")
-			return
-		default:
-			log.Println("Twitterに問合せします")
-			readFromTwitter(votes)
+		}()
+		for {
+			select {
+			case <-stopchan:
+				log.Println("Twitterへの問い合わせを終了します")
+				return
+			default:
+				log.Println("Twitterに問合せします")
+				readFromTwitter(votes)
+				log.Println("待機中")
+				time.Sleep(10 * time.Second) //待機してから再接続
+			}
 		}
-	}
+	}()
+	return stoppedchan
 }
