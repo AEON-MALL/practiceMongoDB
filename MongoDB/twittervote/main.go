@@ -95,4 +95,5 @@ func main(){
 	<- twitterStoppedChan
 	close(votes)
 	<-publisherStoppedChan
+
 }
